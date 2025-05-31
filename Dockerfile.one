@@ -1,9 +1,25 @@
-FROM quay.io/drsylent/cubix/block2/homework-base:java21
+# Wrap java application as a runnable docker image
+FROM quay.io/drsylent/cubix/block2/optional-base:ubuntu22
 
-LABEL cubix.homework.owner="Adam Nok"
+USER root
+
+# Install java jre
+RUN apt-get -y update \
+  && apt-get install -y openjdk-21-jre-headless \
+  && rm -rf /var/lib/apt/lists/*
+
+ARG BUILDER_USER
+LABEL image.builder=$BUILDER_USER
 
 RUN mkdir /opt/app && chown 1001 -R /opt/app
 USER 1001
 WORKDIR /opt/app
 COPY --chown=1001 target/*.jar app.jar
-CMD ["java", "-jar", "app.jar"]
+
+EXPOSE 8080
+
+ENV JAVA_OPTS=""
+ENV JAR_ARGS="" 
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /opt/app/app.jar $JAR_ARGS"]
+CMD []
