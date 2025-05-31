@@ -1,21 +1,20 @@
 # Build java application
-FROM eclipse-temurin AS builder
-COPY .mvn .mvn
+FROM maven:3.9.6-eclipse-temurin-21 AS builder
 COPY src src
 COPY pom.xml pom.xml
-COPY mvnw mvnw
-RUN --mount=type=cache,target=/root/.m2 ./mvnw clean verify
+RUN --mount=type=cache,target=/root/.m2 mvn clean verify
 
 # Wrap java application as a runnable docker image
 FROM quay.io/drsylent/cubix/block2/optional-base:ubuntu22
 
-ARG BUILDER_USER
 
 USER root
 # Install java jre
 RUN apt-get -y update \
   && apt-get install -y openjdk-21-jre-headless \
   && rm -rf /var/lib/apt/lists/*
+
+ARG BUILDER_USER
 LABEL image.builder=$BUILDER_USER
 
 RUN mkdir /opt/app && chown 1001 -R /opt/app
