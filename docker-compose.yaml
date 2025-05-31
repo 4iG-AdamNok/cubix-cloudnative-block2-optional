@@ -1,0 +1,13 @@
+services:
+  backend:
+    image: quay.io/drsylent/cubix/block2/optional-backend:springboot3
+    volumes:
+      - ./backend.config.properties:/var/opt/appconfig/application.properties
+  frontend:
+    image: frontend-two:0.0.1-SNAPSHOT
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: "-Dfrontend.default.message=env"
+      JAR_ARGS: "--spring.main.banner-mode=off"
+      BACKEND_URL: backend:8080

@@ -1,0 +1,38 @@
+# Build java application
+FROM eclipse-temurin AS builder
+COPY .mvn .mvn
+COPY src src
+COPY pom.xml pom.xml
+COPY mvnw mvnw
+RUN --mount=type=cache,target=/root/.m2 ./mvnw clean verify
+
+# Wrap java application as a runnable docker image
+FROM quay.io/drsylent/cubix/block2/optional-base:ubuntu22
+
+ARG BUILDER_USER
+
+USER root
+# Install java jre
+RUN apt-get -y update \
+  && apt-get install -y openjdk-21-jre-headless \
+  && rm -rf /var/lib/apt/lists/*
+LABEL image.builder=$BUILDER_USER
+
+RUN mkdir /opt/app && chown 1001 -R /opt/app
+USER 1001
+WORKDIR /opt/app
+COPY --from=builder --chown=1001 target/*.jar app.jar
+
+EXPOSE 8080
+
+ENV JAVA_OPTS=""
+ENV JAR_ARGS="" 
+
+# Not good >> to slow to stop
+# ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /opt/app/app.jar $JAR_ARGS"]
+
+# It is working but not too nice solution
+# ENTRYPOINT ["sh", "-c", "trap 'exit' TERM; java $JAVA_OPTS -jar /opt/app/app.jar $JAR_ARGS & wait $!"]
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /opt/app/app.jar $JAR_ARGS"]
+CMD []
